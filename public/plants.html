@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Nature Server</title>
+<style type="text/css">
+   form{
+       margin: 20px 0;
+   }
+   form input, button{
+       padding: 5px;
+   }
+   table{
+       width: 100%;
+       margin-bottom: 20px;
+        border-collapse: collapse;
+   }
+   table, th, td{
+       border: 1px solid #cdcdcd ;
+   }
+   table th, table td{
+       padding: 10px;
+       text-align: left;
+   }
+</style>
+<script type="text/javascript" src="http://code.jquery.com/jquery.min.js"></script>
+<script type="text/javascript">
+   $(document).ready(function(){
+
+        //Add new plant
+       $(".add-row").click(function(){
+           var name = $("#name").val();
+
+           var description = $("#description").val();
+
+           $.ajax({
+               url: 'http://localhost:1337/api/plants',
+               data: "name="+ name + "&description="+ description,
+               dataType: 'text',
+               success: function(data) {
+                 //Convert string to javascript object
+                 var plant=JSON.parse(data);
+                 var row = "<tr><td><input type='checkbox' name='record' id='" + plant._id + "'></td><td>" + plant.name + "</td><td>" + plant.description + "</td></tr>";
+                 $("table tbody").append(row);
+
+               },
+               error: function(err) {
+                  console.log('An error has occurred' + JSON.stringify(err));
+
+              },
+               type: 'POST'
+            });
+       });
+
+       // Find and remove selected plants
+       $(".delete-row").click(function(){
+          //Delete Plant Ajax Call
+           $("table tbody").find('input[name="record"]').each(function(){
+
+               if($(this).is(":checked")){
+                   var plantId=$(this).attr('id');
+                   var that=$(this);
+
+                   $.ajax({
+                       url: 'http://localhost:1337/api/plants/' + plantId,
+                       dataType: 'text',
+                       success: function(data) {
+                         that.parents("tr").remove();
+                       },
+                       error: function(err) {
+                          console.log('An error has occurred' + JSON.stringify(err));
+
+                      },
+                       type: 'DELETE'
+                    });
+
+               }
+           });
+       });
+
+      //Populate plants in to table
+      populatePlants();
+
+      function populatePlants() {
+        var plantRows = [];
+
+        $.ajax({
+            url: 'http://localhost:1337/api/plants',
+            data: {
+               format: 'text'
+            },
+            dataType: 'text',
+            success: function(data) {
+              //Convert string to javascript object
+              var plantsArr=JSON.parse(data);
+              //Create simple array of LIs
+              plantRows=plantsArr.map(function(plant){
+                return "<tr><td><input type='checkbox' name='record' id='" + plant._id + "'></td><td>" + plant.name + "</td><td>" + plant.description + "</td></tr>";
+              });
+
+              //Update DOM
+              plantRows.forEach(function(row){
+                $("table tbody").append(row);
+              })
+            },
+            error: function(err) {
+               console.log('An error has occurred' + JSON.stringify(err));
+
+           },
+            type: 'GET'
+         });
+       }
+   });
+</script>
+</head>
+<body>
+   <h1>Nature Server</h1>
+   <form>
+       <input type="text" id="name" name="name" placeholder="Enter Plant Name">
+       <input type="text" id="description" name="description" placeholder="Enter Description">
+       <input type="button" class="add-row" value="Add Plant">
+   </form>
+   <table>
+       <thead>
+           <tr>
+               <th>Select</th>
+               <th>Name</th>
+               <th>description</th>
+           </tr>
+       </thead>
+       <tbody>
+       </tbody>
+   </table>
+   <button type="button" class="delete-row">Delete Plant</button>
+</body>
+</html>
